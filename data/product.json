@@ -1,0 +1,249 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "title": "Bismillah Al-Rahman Al-Raheem",
+      "description": "Beautiful calligraphy of the opening verse of the Quran. This piece features elegant Arabic script with gold leaf accents on a premium canvas background.",
+      "price": 299,
+      "originalPrice": 399,
+      "image": "/images/artwork-1.jpg",
+      "images": [
+        "/images/artwork-1.jpg",
+        "/images/artwork-1-detail.jpg",
+        "/images/artwork-1-side.jpg"
+      ],
+      "category": "Religious",
+      "dimensions": "60cm x 40cm",
+      "medium": "Gold leaf on canvas",
+      "style": "Traditional",
+      "inStock": true,
+      "featured": true,
+      "tags": ["bismillah", "quran", "gold", "traditional"],
+      "rating": 5,
+      "reviews": 12,
+      "shippingWeight": "2.5kg",
+      "framed": true,
+      "customizable": true
+    },
+    {
+      "id": 2,
+      "title": "Allah - The Divine Name",
+      "description": "Elegant representation of Allah's name in traditional calligraphy style. Perfect for home decoration or as a meaningful gift.",
+      "price": 199,
+      "originalPrice": 249,
+      "image": "/images/artwork-2.jpg",
+      "images": [
+        "/images/artwork-2.jpg",
+        "/images/artwork-2-detail.jpg"
+      ],
+      "category": "Religious",
+      "dimensions": "50cm x 50cm",
+      "medium": "Acrylic on canvas",
+      "style": "Traditional",
+      "inStock": true,
+      "featured": true,
+      "tags": ["allah", "divine", "traditional", "square"],
+      "rating": 5,
+      "reviews": 8,
+      "shippingWeight": "2kg",
+      "framed": true,
+      "customizable": true
+    },
+    {
+      "id": 3,
+      "title": "Surah Al-Fatiha",
+      "description": "The opening chapter of the Quran beautifully rendered in calligraphy. This piece includes the complete seven verses with decorative elements.",
+      "price": 399,
+      "originalPrice": 499,
+      "image": "/images/artwork-3.jpg",
+      "images": [
+        "/images/artwork-3.jpg",
+        "/images/artwork-3-detail.jpg",
+        "/images/artwork-3-full.jpg"
+      ],
+      "category": "Religious",
+      "dimensions": "80cm x 60cm",
+      "medium": "Mixed media on paper",
+      "style": "Traditional",
+      "inStock": true,
+      "featured": true,
+      "tags": ["surah", "fatiha", "quran", "complete"],
+      "rating": 5,
+      "reviews": 15,
+      "shippingWeight": "3kg",
+      "framed": true,
+      "customizable": false
+    },
+    {
+      "id": 4,
+      "title": "Peace & Harmony",
+      "description": "Contemporary Arabic calligraphy design featuring the word 'Salam' (Peace) in a modern artistic style.",
+      "price": 249,
+      "originalPrice": 299,
+      "image": "/images/artwork-4.jpg",
+      "images": [
+        "/images/artwork-4.jpg",
+        "/images/artwork-4-detail.jpg"
+      ],
+      "category": "Contemporary",
+      "dimensions": "70cm x 50cm",
+      "medium": "Ink on handmade paper",
+      "style": "Modern",
+      "inStock": true,
+      "featured": false,
+      "tags": ["peace", "modern", "contemporary", "salam"],
+      "rating": 4,
+      "reviews": 6,
+      "shippingWeight": "1.8kg",
+      "framed": false,
+      "customizable": true
+    },
+    {
+      "id": 5,
+      "title": "The Prophet's Name",
+      "description": "Muhammad ﷺ in elegant script with traditional Islamic decorative elements and gold accents.",
+      "price": 179,
+      "originalPrice": 229,
+      "image": "/images/artwork-5.jpg",
+      "images": [
+        "/images/artwork-5.jpg",
+        "/images/artwork-5-detail.jpg"
+      ],
+      "category": "Religious",
+      "dimensions": "45cm x 45cm",
+      "medium": "Gold and black ink",
+      "style": "Traditional",
+      "inStock": true,
+      "featured": false,
+      "tags": ["prophet", "muhammad", "gold", "traditional"],
+      "rating": 5,
+      "reviews": 10,
+      "shippingWeight": "1.5kg",
+      "framed": true,
+      "customizable": true
+    },
+    {
+      "id": 6,
+      "title": "Modern Arabic Poetry",
+      "description": "Contemporary verse in calligraphic style featuring beautiful Arabic poetry with modern artistic interpretation.",
+      "price": 329,
+      "originalPrice": 379,
+      "image": "/images/artwork-6.jpg",
+      "images": [
+        "/images/artwork-6.jpg",
+        "/images/artwork-6-detail.jpg"
+      ],
+      "category": "Contemporary",
+      "dimensions": "90cm x 60cm",
+      "medium": "Mixed media on canvas",
+      "style": "Modern",
+      "inStock": true,
+      "featured": false,
+      "tags": ["poetry", "modern", "contemporary", "artistic"],
+      "rating": 4,
+      "reviews": 7,
+      "shippingWeight": "3.2kg",
+      "framed": true,
+      "customizable": true
+    },
+    {
+      "id": 7,
+      "title": "Ayat Al-Kursi",
+      "description": "The Throne Verse beautifully calligraphed with intricate decorative borders and gold leaf highlights.",
+      "price": 449,
+      "originalPrice": 549,
+      "image": "/images/artwork-7.jpg",
+      "images": [
+        "/images/artwork-7.jpg",
+        "/images/artwork-7-detail.jpg"
+      ],
+      "category": "Religious",
+      "dimensions": "100cm x 70cm",
+      "medium": "Gold leaf and ink on canvas",
+      "style": "Traditional",
+      "inStock": true,
+      "featured": true,
+      "tags": ["ayat", "kursi", "throne", "gold"],
+      "rating": 5,
+      "reviews": 18,
+      "shippingWeight": "4kg",
+      "framed": true,
+      "customizable": false
+    },
+    {
+      "id": 8,
+      "title": "Islamic Geometric Pattern",
+      "description": "Beautiful geometric pattern with Arabic calligraphy elements, perfect for modern interior design.",
+      "price": 279,
+      "originalPrice": 329,
+      "image": "/images/artwork-8.jpg",
+      "images": [
+        "/images/artwork-8.jpg",
+        "/images/artwork-8-detail.jpg"
+      ],
+      "category": "Contemporary",
+      "dimensions": "60cm x 60cm",
+      "medium": "Acrylic on canvas",
+      "style": "Modern",
+      "inStock": true,
+      "featured": false,
+      "tags": ["geometric", "pattern", "modern", "design"],
+      "rating": 4,
+      "reviews": 5,
+      "shippingWeight": "2.2kg",
+      "framed": true,
+      "customizable": true
+    },
+    {
+      "id": 9,
+      "title": "Surah Al-Ikhlas",
+      "description": "The Purity chapter of the Quran in elegant calligraphy. This piece features the complete surah with beautiful decorative elements and gold accents.",
+      "price": 189,
+      "originalPrice": 239,
+      "image": "/images/gallery/khat1.jpg",
+      "images": [
+        "/images/gallery/khat1.jpg",
+        "/images/gallery/khat2.jpg",
+        "/images/gallery/khat3.jpg"
+      ],
+      "category": "Religious",
+      "dimensions": "55cm x 45cm",
+      "medium": "Gold leaf and ink on canvas",
+      "style": "Traditional",
+      "inStock": true,
+      "featured": false,
+      "tags": ["surah", "ikhlas", "purity", "gold", "traditional"],
+      "rating": 5,
+      "reviews": 0,
+      "shippingWeight": "2kg",
+      "framed": true,
+      "customizable": true
+    }
+  ],
+  "categories": [
+    {
+      "id": "religious",
+      "name": "Religious",
+      "description": "Traditional Islamic calligraphy featuring verses from the Quran and religious texts",
+      "count": 6
+    },
+    {
+      "id": "contemporary",
+      "name": "Contemporary",
+      "description": "Modern interpretations of Arabic calligraphy with artistic flair",
+      "count": 3
+    }
+  ],
+  "styles": [
+    {
+      "id": "traditional",
+      "name": "Traditional",
+      "description": "Classical Islamic calligraphy styles"
+    },
+    {
+      "id": "modern",
+      "name": "Modern",
+      "description": "Contemporary artistic interpretations"
+    }
+  ]
+}
