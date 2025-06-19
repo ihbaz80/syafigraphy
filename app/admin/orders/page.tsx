@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useAdminAuth } from '@/lib/AdminAuthContext'
 
 interface OrderItem {
   id: string
@@ -29,124 +30,17 @@ interface Order {
 
 export default function AdminOrders() {
   const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [orders, setOrders] = useState<Order[]>([])
+  const { isAuthenticated, orders, updateOrderStatus } = useAdminAuth()
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
   useEffect(() => {
     // Check authentication
-    const checkAuth = () => {
-      const authenticated = localStorage.getItem('adminAuthenticated') === 'true'
-      if (!authenticated) {
-        router.push('/admin/login')
-        return
-      }
-      setIsAuthenticated(true)
-      setIsLoading(false)
-      loadOrders()
+    if (!isAuthenticated) {
+      router.push('/admin/login')
     }
-
-    checkAuth()
-  }, [router])
-
-  const loadOrders = async () => {
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Sample order data
-      const sampleOrders: Order[] = [
-        {
-          id: 'ORD-001',
-          customerName: 'Ahmad bin Abdullah',
-          customerEmail: 'ahmad@email.com',
-          customerPhone: '+60123456789',
-          customerAddress: '123 Jalan Melaka, Kuala Lumpur, 50000',
-          items: [
-            {
-              id: '1',
-              productId: '1',
-              productName: 'Bismillah Calligraphy',
-              productImage: '/images/gallery/khat1.jpg',
-              quantity: 1,
-              price: 250
-            }
-          ],
-          totalAmount: 250,
-          status: 'pending',
-          paymentStatus: 'paid',
-          orderDate: '2024-01-15T10:30:00Z',
-          paymentMethod: 'ToyyibPay',
-          notes: 'Customer requested express delivery'
-        },
-        {
-          id: 'ORD-002',
-          customerName: 'Siti binti Mohamed',
-          customerEmail: 'siti@email.com',
-          customerPhone: '+60187654321',
-          customerAddress: '456 Taman Damai, Petaling Jaya, 46100',
-          items: [
-            {
-              id: '2',
-              productId: '2',
-              productName: 'Alhamdulillah Art',
-              productImage: '/images/gallery/khat2.jpg',
-              quantity: 2,
-              price: 180
-            },
-            {
-              id: '3',
-              productId: '3',
-              productName: 'Allahu Akbar Design',
-              productImage: '/images/gallery/khat3.jpg',
-              quantity: 1,
-              price: 300
-            }
-          ],
-          totalAmount: 660,
-          status: 'confirmed',
-          paymentStatus: 'paid',
-          orderDate: '2024-01-14T14:20:00Z',
-          paymentMethod: 'ToyyibPay'
-        },
-        {
-          id: 'ORD-003',
-          customerName: 'Mohammed Ali',
-          customerEmail: 'mohammed@email.com',
-          customerPhone: '+60111222333',
-          customerAddress: '789 Bandar Baru, Shah Alam, 40000',
-          items: [
-            {
-              id: '4',
-              productId: '1',
-              productName: 'Bismillah Calligraphy',
-              productImage: '/images/gallery/khat1.jpg',
-              quantity: 1,
-              price: 250
-            }
-          ],
-          totalAmount: 250,
-          status: 'processing',
-          paymentStatus: 'paid',
-          orderDate: '2024-01-13T09:15:00Z',
-          paymentMethod: 'ToyyibPay'
-        }
-      ]
-      
-      setOrders(sampleOrders)
-    } catch (error) {
-      console.error('Error loading orders:', error)
-    }
-  }
-
-  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ))
-  }
+  }, [isAuthenticated, router])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -183,19 +77,15 @@ export default function AdminOrders() {
     ? orders 
     : orders.filter(order => order.status === statusFilter)
 
-  if (isLoading) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading orders...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     )
-  }
-
-  if (!isAuthenticated) {
-    return null
   }
 
   return (
@@ -300,9 +190,12 @@ export default function AdminOrders() {
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300 cursor-pointer"
+                      >
                         {order.id}
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
@@ -330,14 +223,14 @@ export default function AdminOrders() {
                       <select
                         value={order.status}
                         onChange={(e) => updateOrderStatus(order.id, e.target.value as Order['status'])}
-                        className={`text-xs font-semibold rounded-full px-2 py-1 ${getStatusColor(order.status)}`}
+                        className={`text-xs font-semibold rounded-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:focus:border-amber-400 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed bg-white appearance-none cursor-pointer transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 ${getStatusColor(order.status)}`}
                       >
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="pending" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Pending</option>
+                        <option value="confirmed" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Confirmed</option>
+                        <option value="processing" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Processing</option>
+                        <option value="shipped" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Shipped</option>
+                        <option value="delivered" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Delivered</option>
+                        <option value="cancelled" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Cancelled</option>
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -349,15 +242,23 @@ export default function AdminOrders() {
                       {formatDate(order.orderDate)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => {
-                          setSelectedOrder(order)
-                          setShowOrderModal(true)
-                        }}
-                        className="text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex space-x-3">
+                        <Link
+                          href={`/admin/orders/${order.id}`}
+                          className="text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300"
+                        >
+                          View Details
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setSelectedOrder(order)
+                            setShowOrderModal(true)
+                          }}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                        >
+                          Quick View
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -411,14 +312,14 @@ export default function AdminOrders() {
                       <select
                         value={selectedOrder.status}
                         onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value as Order['status'])}
-                        className={`ml-2 text-xs font-semibold rounded-full px-2 py-1 ${getStatusColor(selectedOrder.status)}`}
+                        className={`ml-2 text-xs font-semibold rounded-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:focus:border-amber-400 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed bg-white appearance-none cursor-pointer transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 ${getStatusColor(selectedOrder.status)}`}
                       >
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="pending" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Pending</option>
+                        <option value="confirmed" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Confirmed</option>
+                        <option value="processing" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Processing</option>
+                        <option value="shipped" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Shipped</option>
+                        <option value="delivered" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Delivered</option>
+                        <option value="cancelled" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2">Cancelled</option>
                       </select>
                     </p>
                   </div>
@@ -467,7 +368,13 @@ export default function AdminOrders() {
               )}
 
               {/* Close Button */}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Link
+                  href={`/admin/orders/${selectedOrder.id}/invoice`}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-300"
+                >
+                  🧾 Generate Invoice
+                </Link>
                 <button
                   onClick={() => setShowOrderModal(false)}
                   className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-300"

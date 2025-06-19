@@ -3,28 +3,27 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '../../lib/CartContext'
-import productData from '../../data/product.json'
 
 interface Product {
   id: number
   title: string
   description: string
   price: number
-  originalPrice: number
+  originalPrice?: number
   image: string
-  images: string[]
+  images?: string[]
   category: string
-  dimensions: string
-  medium: string
-  style: string
+  dimensions?: string
+  medium?: string
+  style?: string
   inStock: boolean
   featured: boolean
-  tags: string[]
-  rating: number
-  reviews: number
-  shippingWeight: string
-  framed: boolean
-  customizable: boolean
+  tags?: string[]
+  rating?: number
+  reviews?: number
+  shippingWeight?: string
+  framed?: boolean
+  customizable?: boolean
 }
 
 interface ProductData {
@@ -34,16 +33,59 @@ interface ProductData {
 }
 
 export default function ShopPage() {
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(productData.products)
+  const [products, setProducts] = useState<Product[]>([])
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedStyle, setSelectedStyle] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('featured')
+  const [isLoading, setIsLoading] = useState(true)
   const { addItem } = useCart()
+
+  // Load products from database
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const response = await fetch('/api/products')
+        const data = await response.json()
+        
+        // Transform database products to match the interface
+        const transformedProducts: Product[] = data.products.map((product: any) => ({
+          id: product.id,
+          title: product.title,
+          description: product.description,
+          price: product.price,
+          originalPrice: product.original_price,
+          image: product.image_url,
+          category: product.category,
+          dimensions: product.dimensions,
+          medium: product.medium,
+          style: product.style,
+          inStock: Boolean(product.in_stock),
+          featured: Boolean(product.featured),
+          tags: product.tags ? product.tags.split(',') : [],
+          rating: product.rating,
+          reviews: product.reviews_count,
+          shippingWeight: product.shipping_weight,
+          framed: Boolean(product.framed),
+          customizable: Boolean(product.customizable)
+        }))
+        
+        setProducts(transformedProducts)
+        setFilteredProducts(transformedProducts)
+      } catch (error) {
+        console.error('Error loading products:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadProducts()
+  }, [])
 
   // Filter and sort products
   useEffect(() => {
-    let filtered = productData.products
+    let filtered = products
 
     // Filter by category
     if (selectedCategory !== 'all') {
@@ -52,7 +94,7 @@ export default function ShopPage() {
 
     // Filter by style
     if (selectedStyle !== 'all') {
-      filtered = filtered.filter(product => product.style.toLowerCase() === selectedStyle)
+      filtered = filtered.filter(product => product.style?.toLowerCase() === selectedStyle)
     }
 
     // Filter by search term
@@ -60,7 +102,7 @@ export default function ShopPage() {
       filtered = filtered.filter(product =>
         product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        product.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     }
 
@@ -73,10 +115,10 @@ export default function ShopPage() {
         filtered.sort((a, b) => b.price - a.price)
         break
       case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating)
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0))
         break
       case 'reviews':
-        filtered.sort((a, b) => b.reviews - a.reviews)
+        filtered.sort((a, b) => (b.reviews || 0) - (a.reviews || 0))
         break
       case 'featured':
       default:
@@ -85,7 +127,7 @@ export default function ShopPage() {
     }
 
     setFilteredProducts(filtered)
-  }, [selectedCategory, selectedStyle, searchTerm, sortBy])
+  }, [products, selectedCategory, selectedStyle, searchTerm, sortBy])
 
   const handleAddToCart = (product: Product) => {
     addItem({
@@ -95,6 +137,24 @@ export default function ShopPage() {
       image: product.image,
       quantity: 1
     })
+  }
+
+  // Get unique categories and styles from products
+  const categories = Array.from(new Set(products.map(p => p.category)))
+    .map(cat => ({ id: cat.toLowerCase(), name: cat, description: `${cat} calligraphy`, count: products.filter(p => p.category === cat).length }))
+
+  const styles = Array.from(new Set(products.map(p => p.style).filter(Boolean)))
+    .map(style => ({ id: style!.toLowerCase(), name: style!, description: `${style} style calligraphy` }))
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading products...</p>
+        </div>
+      </div>
+    )
   }
 
   if (filteredProducts.length === 0) {
@@ -160,9 +220,9 @@ export default function ShopPage() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
                 <option value="all">All Categories</option>
-                {productData.categories.map(category => (
+                {categories.map(category => (
                   <option key={category.id} value={category.id}>
-                    {category.name}
+                    {category.name} ({category.count})
                   </option>
                 ))}
               </select>
@@ -179,7 +239,7 @@ export default function ShopPage() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
                 <option value="all">All Styles</option>
-                {productData.styles.map(style => (
+                {styles.map(style => (
                   <option key={style.id} value={style.id}>
                     {style.name}
                   </option>
@@ -207,33 +267,32 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* Results Count */}
+        {/* Results Summary */}
         <div className="mb-6">
-          <p className="text-gray-600 dark:text-gray-300">
-            Showing {filteredProducts.length} of {productData.products.length} products
+          <p className="text-gray-600 dark:text-gray-400">
+            Showing {filteredProducts.length} of {products.length} products
           </p>
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 overflow-hidden hover:shadow-xl dark:hover:shadow-gray-900/70 transition-shadow duration-300">
+            <div key={product.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 overflow-hidden hover:shadow-xl transition-shadow duration-300">
               {/* Product Image */}
-              <div className="relative aspect-square bg-gray-100 dark:bg-gray-700">
+              <div className="relative h-64 bg-gray-200 dark:bg-gray-700">
                 <Image
                   src={product.image}
                   alt={product.title}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 />
                 {product.featured && (
-                  <div className="absolute top-2 left-2 bg-amber-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                  <div className="absolute top-2 left-2 bg-amber-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
                     Featured
                   </div>
                 )}
                 {!product.inStock && (
-                  <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                  <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
                     Out of Stock
                   </div>
                 )}
@@ -241,48 +300,58 @@ export default function ShopPage() {
 
               {/* Product Info */}
               <div className="p-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
                   {product.title}
                 </h3>
                 
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
                   {product.description}
                 </p>
 
                 {/* Price */}
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                    RM {product.price.toFixed(2)}
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <span className="text-xl font-bold text-gray-900 dark:text-white">
+                      RM {product.price}
+                    </span>
+                    {product.originalPrice && product.originalPrice > product.price && (
+                      <span className="text-sm text-gray-500 line-through ml-2">
+                        RM {product.originalPrice}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-yellow-400">★</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 ml-1">
+                      {product.rating || 0} ({product.reviews || 0})
+                    </span>
+                  </div>
+                </div>
+
+                {/* Category and Style */}
+                <div className="flex flex-wrap gap-1 mb-3">
+                  <span className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded">
+                    {product.category}
                   </span>
-                  {product.originalPrice > product.price && (
-                    <span className="text-sm text-gray-500 line-through">
-                      RM {product.originalPrice.toFixed(2)}
+                  {product.style && (
+                    <span className="inline-block bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs px-2 py-1 rounded">
+                      {product.style}
                     </span>
                   )}
                 </div>
 
-                {/* Product Details */}
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-4 space-y-1">
-                  <div>Size: {product.dimensions}</div>
-                  <div>Medium: {product.medium}</div>
-                  <div className="flex items-center gap-2">
-                    <span>★ {product.rating}</span>
-                    <span>({product.reviews} reviews)</span>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
+                {/* Actions */}
+                <div className="flex space-x-2">
                   <Link
                     href={`/shop/${product.id}`}
-                    className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 rounded text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-300 text-center"
+                    className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg text-center text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-300"
                   >
                     View Details
                   </Link>
                   <button
                     onClick={() => handleAddToCart(product)}
                     disabled={!product.inStock}
-                    className="flex-1 bg-amber-600 dark:bg-amber-500 text-white px-3 py-2 rounded text-sm font-medium hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-amber-600 dark:bg-amber-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {product.inStock ? 'Add to Cart' : 'Out of Stock'}
                   </button>
@@ -295,3 +364,4 @@ export default function ShopPage() {
     </div>
   )
 }
+

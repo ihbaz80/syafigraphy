@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useAdminAuth } from '@/lib/AdminAuthContext'
 
 interface ProductForm {
-  name: string
+  title: string
   price: string
   description: string
   category: string
@@ -12,17 +13,20 @@ interface ProductForm {
   inStock: boolean
   featured: boolean
   dimensions: string
-  materials: string
+  medium: string
   style: string
+  tags: string
+  shippingWeight: string
+  framed: boolean
+  customizable: boolean
 }
 
 export default function AddProduct() {
   const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const { isAuthenticated, addProduct } = useAdminAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<ProductForm>({
-    name: '',
+    title: '',
     price: '',
     description: '',
     category: 'Religious',
@@ -30,24 +34,20 @@ export default function AddProduct() {
     inStock: true,
     featured: false,
     dimensions: '',
-    materials: '',
-    style: ''
+    medium: '',
+    style: '',
+    tags: '',
+    shippingWeight: '',
+    framed: true,
+    customizable: true
   })
 
   useEffect(() => {
     // Check authentication
-    const checkAuth = () => {
-      const authenticated = localStorage.getItem('adminAuthenticated') === 'true'
-      if (!authenticated) {
-        router.push('/admin/login')
-        return
-      }
-      setIsAuthenticated(true)
-      setIsLoading(false)
+    if (!isAuthenticated) {
+      router.push('/admin/login')
     }
-
-    checkAuth()
-  }, [router])
+  }, [isAuthenticated, router])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -62,21 +62,40 @@ export default function AddProduct() {
     setIsSubmitting(true)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Convert form data to product format
+      const newProduct = {
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        image: formData.image,
+        category: formData.category,
+        dimensions: formData.dimensions || undefined,
+        medium: formData.medium || undefined,
+        style: formData.style || undefined,
+        inStock: formData.inStock,
+        featured: formData.featured,
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
+        shippingWeight: formData.shippingWeight || undefined,
+        framed: formData.framed,
+        customizable: formData.customizable,
+        rating: 0,
+        reviews: 0
+      }
       
-      // In a real app, you would send this to your API
-      console.log('New product data:', formData)
+      // Add the product using the shared context
+      await addProduct(newProduct)
       
       // Redirect back to products page
       router.push('/admin/products')
     } catch (error) {
       console.error('Error adding product:', error)
+      alert('Failed to add product. Please try again.')
+    } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (isLoading) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -85,10 +104,6 @@ export default function AddProduct() {
         </div>
       </div>
     )
-  }
-
-  if (!isAuthenticated) {
-    return null
   }
 
   return (
@@ -120,15 +135,15 @@ export default function AddProduct() {
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Product Name *
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Product Title *
                 </label>
                 <input
                   type="text"
-                  id="name"
-                  name="name"
+                  id="title"
+                  name="title"
                   required
-                  value={formData.name}
+                  value={formData.title}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="e.g., Bismillah Calligraphy"
@@ -185,6 +200,7 @@ export default function AddProduct() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 >
                   <option value="Religious">Religious</option>
+                  <option value="Contemporary">Contemporary</option>
                   <option value="Decorative">Decorative</option>
                   <option value="Wedding">Wedding</option>
                   <option value="Business">Business</option>
@@ -228,7 +244,7 @@ export default function AddProduct() {
               </p>
             </div>
 
-            {/* Dimensions and Materials */}
+            {/* Dimensions and Medium */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="dimensions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -246,23 +262,59 @@ export default function AddProduct() {
               </div>
 
               <div>
-                <label htmlFor="materials" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Materials
+                <label htmlFor="medium" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Medium
                 </label>
                 <input
                   type="text"
-                  id="materials"
-                  name="materials"
-                  value={formData.materials}
+                  id="medium"
+                  name="medium"
+                  value={formData.medium}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="e.g., Canvas, Gold leaf, Acrylic paint"
+                  placeholder="e.g., Gold leaf on canvas, Acrylic paint"
+                />
+              </div>
+            </div>
+
+            {/* Tags and Shipping Weight */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tags
+                </label>
+                <input
+                  type="text"
+                  id="tags"
+                  name="tags"
+                  value={formData.tags}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="e.g., bismillah, quran, gold, traditional"
+                />
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Separate tags with commas
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="shippingWeight" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Shipping Weight
+                </label>
+                <input
+                  type="text"
+                  id="shippingWeight"
+                  name="shippingWeight"
+                  value={formData.shippingWeight}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="e.g., 2.5kg"
                 />
               </div>
             </div>
 
             {/* Checkboxes */}
-            <div className="flex space-x-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -288,6 +340,34 @@ export default function AddProduct() {
                 />
                 <label htmlFor="featured" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                   Featured Product
+                </label>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="framed"
+                  name="framed"
+                  checked={formData.framed}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                />
+                <label htmlFor="framed" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  Framed
+                </label>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="customizable"
+                  name="customizable"
+                  checked={formData.customizable}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                />
+                <label htmlFor="customizable" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  Customizable
                 </label>
               </div>
             </div>

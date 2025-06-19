@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useAdminAuth } from '@/lib/AdminAuthContext'
 
 interface AnalyticsData {
   totalRevenue: number
@@ -17,79 +18,178 @@ interface AnalyticsData {
 
 export default function Analytics() {
   const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { isAuthenticated, orders } = useAdminAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
   const [dateRange, setDateRange] = useState('30') // days
 
   useEffect(() => {
     // Check authentication
-    const checkAuth = () => {
-      const authenticated = localStorage.getItem('adminAuthenticated') === 'true'
-      if (!authenticated) {
-        router.push('/admin/login')
-        return
-      }
-      setIsAuthenticated(true)
-      loadAnalytics()
+    if (!isAuthenticated) {
+      router.push('/admin/login')
+      return
     }
+    
+    // Calculate analytics from actual orders data
+    calculateAnalytics()
+  }, [isAuthenticated, orders, dateRange, router])
 
-    checkAuth()
-  }, [router, dateRange])
-
-  const loadAnalytics = async () => {
+  const calculateAnalytics = () => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Filter orders based on date range
+      const now = new Date()
+      const daysAgo = parseInt(dateRange)
+      const filteredOrders = orders.filter(order => {
+        const orderDate = new Date(order.orderDate)
+        const diffTime = Math.abs(now.getTime() - orderDate.getTime())
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        return diffDays <= daysAgo
+      })
+
+      // Calculate total revenue
+      const totalRevenue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0)
       
-      // Sample analytics data
-      const sampleData: AnalyticsData = {
-        totalRevenue: 15420,
-        totalOrders: 47,
-        averageOrderValue: 328,
-        conversionRate: 3.2,
-        monthlyRevenue: [
-          { month: 'Jan', revenue: 3200 },
-          { month: 'Feb', revenue: 2800 },
-          { month: 'Mar', revenue: 4100 },
-          { month: 'Apr', revenue: 3800 },
-          { month: 'May', revenue: 5200 },
-          { month: 'Jun', revenue: 4800 }
-        ],
-        topProducts: [
-          { name: 'Bismillah Calligraphy', sales: 12, revenue: 3000 },
-          { name: 'Alhamdulillah Art', sales: 8, revenue: 1440 },
-          { name: 'Allahu Akbar Design', sales: 6, revenue: 1800 },
-          { name: 'Surah Al-Fatiha', sales: 5, revenue: 1250 },
-          { name: 'Custom Name Calligraphy', sales: 4, revenue: 800 }
-        ],
-        orderStatusDistribution: [
-          { status: 'Delivered', count: 25 },
-          { status: 'Processing', count: 8 },
-          { status: 'Shipped', count: 6 },
-          { status: 'Pending', count: 5 },
-          { status: 'Cancelled', count: 3 }
-        ],
-        customerSegments: [
-          { segment: 'New Customers', count: 15, revenue: 4200 },
-          { segment: 'Returning Customers', count: 25, revenue: 8900 },
-          { segment: 'VIP Customers', count: 7, revenue: 2320 }
-        ],
-        recentOrders: [
-          { id: 'ORD-001', customer: 'Ahmad bin Abdullah', amount: 250, date: '2024-01-15' },
-          { id: 'ORD-002', customer: 'Siti binti Mohamed', amount: 660, date: '2024-01-14' },
-          { id: 'ORD-003', customer: 'Mohammed Ali', amount: 250, date: '2024-01-13' },
-          { id: 'ORD-004', customer: 'Fatimah Zahra', amount: 450, date: '2024-01-12' },
-          { id: 'ORD-005', customer: 'Abdul Rahman', amount: 320, date: '2024-01-11' }
-        ]
+      // Calculate total orders
+      const totalOrders = filteredOrders.length
+      
+      // Calculate average order value
+      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
+      
+      // Calculate conversion rate (simplified - in real app this would be based on actual visitor data)
+      const conversionRate = 3.2 // Placeholder - would need visitor analytics
+      
+      // Calculate monthly revenue for the last 6 months
+      const monthlyRevenue = calculateMonthlyRevenue(filteredOrders)
+      
+      // Calculate top products
+      const topProducts = calculateTopProducts(filteredOrders)
+      
+      // Calculate order status distribution
+      const orderStatusDistribution = calculateOrderStatusDistribution(filteredOrders)
+      
+      // Calculate customer segments
+      const customerSegments = calculateCustomerSegments(filteredOrders)
+      
+      // Get recent orders
+      const recentOrders = filteredOrders
+        .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
+        .slice(0, 5)
+        .map(order => ({
+          id: order.id,
+          customer: order.customerName,
+          amount: order.totalAmount,
+          date: order.orderDate
+        }))
+
+      const analyticsData: AnalyticsData = {
+        totalRevenue,
+        totalOrders,
+        averageOrderValue,
+        conversionRate,
+        monthlyRevenue,
+        topProducts,
+        orderStatusDistribution,
+        customerSegments,
+        recentOrders
       }
       
-      setAnalyticsData(sampleData)
+      setAnalyticsData(analyticsData)
       setIsLoading(false)
     } catch (error) {
-      console.error('Error loading analytics:', error)
+      console.error('Error calculating analytics:', error)
       setIsLoading(false)
     }
+  }
+
+  const calculateMonthlyRevenue = (orders: any[]) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const monthlyData: { [key: string]: number } = {}
+    
+    // Initialize last 6 months with 0 revenue
+    const now = new Date()
+    for (let i = 5; i >= 0; i--) {
+      const month = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthKey = months[month.getMonth()]
+      monthlyData[monthKey] = 0
+    }
+    
+    // Add revenue from orders
+    orders.forEach(order => {
+      const orderDate = new Date(order.orderDate)
+      const monthKey = months[orderDate.getMonth()]
+      if (monthlyData[monthKey] !== undefined) {
+        monthlyData[monthKey] += order.totalAmount
+      }
+    })
+    
+    return Object.entries(monthlyData).map(([month, revenue]) => ({ month, revenue }))
+  }
+
+  const calculateTopProducts = (orders: any[]) => {
+    const productSales: { [key: string]: { sales: number; revenue: number } } = {}
+    
+    orders.forEach(order => {
+      order.items.forEach((item: any) => {
+        if (!productSales[item.productName]) {
+          productSales[item.productName] = { sales: 0, revenue: 0 }
+        }
+        productSales[item.productName].sales += item.quantity
+        productSales[item.productName].revenue += item.price * item.quantity
+      })
+    })
+    
+    return Object.entries(productSales)
+      .map(([name, data]) => ({ name, sales: data.sales, revenue: data.revenue }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5)
+  }
+
+  const calculateOrderStatusDistribution = (orders: any[]) => {
+    const statusCount: { [key: string]: number } = {}
+    
+    orders.forEach(order => {
+      const status = order.status.charAt(0).toUpperCase() + order.status.slice(1)
+      statusCount[status] = (statusCount[status] || 0) + 1
+    })
+    
+    return Object.entries(statusCount)
+      .map(([status, count]) => ({ status, count }))
+      .sort((a, b) => b.count - a.count)
+  }
+
+  const calculateCustomerSegments = (orders: any[]) => {
+    const customerOrders: { [key: string]: { count: number; revenue: number } } = {}
+    
+    orders.forEach(order => {
+      if (!customerOrders[order.customerName]) {
+        customerOrders[order.customerName] = { count: 0, revenue: 0 }
+      }
+      customerOrders[order.customerName].count += 1
+      customerOrders[order.customerName].revenue += order.totalAmount
+    })
+    
+    const customers = Object.entries(customerOrders)
+    const newCustomers = customers.filter(([_, data]) => data.count === 1)
+    const returningCustomers = customers.filter(([_, data]) => data.count > 1 && data.count <= 3)
+    const vipCustomers = customers.filter(([_, data]) => data.count > 3)
+    
+    return [
+      {
+        segment: 'New Customers',
+        count: newCustomers.length,
+        revenue: newCustomers.reduce((sum, [_, data]) => sum + data.revenue, 0)
+      },
+      {
+        segment: 'Returning Customers',
+        count: returningCustomers.length,
+        revenue: returningCustomers.reduce((sum, [_, data]) => sum + data.revenue, 0)
+      },
+      {
+        segment: 'VIP Customers',
+        count: vipCustomers.length,
+        revenue: vipCustomers.reduce((sum, [_, data]) => sum + data.revenue, 0)
+      }
+    ]
   }
 
   const formatCurrency = (amount: number) => {

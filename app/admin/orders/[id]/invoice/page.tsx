@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { generateInvoicePDF } from '@/lib/pdfGenerator'
 
 interface OrderItem {
   id: string
@@ -103,6 +104,37 @@ export default function GenerateInvoice() {
     window.print()
   }
 
+  const handleDownloadPDF = async () => {
+    if (!order) return
+    
+    try {
+      // Show loading state
+      const button = document.querySelector('[data-pdf-button]') as HTMLButtonElement
+      if (button) {
+        button.disabled = true
+        button.textContent = 'Generating PDF...'
+      }
+      
+      await generateInvoicePDF(order)
+      
+      // Reset button state
+      if (button) {
+        button.disabled = false
+        button.textContent = 'Download PDF'
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error)
+      alert('Failed to generate PDF. Please try again.')
+      
+      // Reset button state
+      const button = document.querySelector('[data-pdf-button]') as HTMLButtonElement
+      if (button) {
+        button.disabled = false
+        button.textContent = 'Download PDF'
+      }
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-MY', {
       year: 'numeric',
@@ -157,8 +189,9 @@ export default function GenerateInvoice() {
                 Print Invoice
               </button>
               <button
-                onClick={() => window.open(`/admin/orders/${orderId}/invoice/download`, '_blank')}
-                className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-300"
+                data-pdf-button
+                onClick={handleDownloadPDF}
+                className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Download PDF
               </button>

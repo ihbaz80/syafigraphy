@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import productData from '../../../data/product.json'
 import { useCart } from '../../../lib/CartContext'
 
 interface Product {
@@ -29,11 +28,51 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [cartMessage, setCartMessage] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const productId = parseInt(params.slug as string)
-    const foundProduct = productData.products.find(p => p.id === productId)
-    setProduct(foundProduct || null)
+    const fetchProduct = async () => {
+      try {
+        setLoading(true)
+        const productId = parseInt(params.slug as string)
+        const response = await fetch(`/api/products/${productId}`)
+        
+        if (!response.ok) {
+          throw new Error('Product not found')
+        }
+        
+        const productData = await response.json()
+        
+        // Transform database product to match the interface
+        const transformedProduct: Product = {
+          id: productData.id,
+          title: productData.title,
+          description: productData.description,
+          price: productData.price,
+          originalPrice: productData.original_price,
+          image: productData.image_url,
+          category: productData.category,
+          dimensions: productData.dimensions,
+          medium: productData.medium,
+          style: productData.style,
+          inStock: Boolean(productData.in_stock),
+          featured: Boolean(productData.featured),
+          rating: productData.rating,
+          reviews: productData.reviews_count
+        }
+        
+        setProduct(transformedProduct)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load product')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (params.slug) {
+      fetchProduct()
+    }
   }, [params.slug])
 
   const handleAddToCart = () => {
@@ -67,13 +106,26 @@ export default function ProductDetailPage() {
     }
   }
 
-  if (!product) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading product...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !product) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl font-arabic text-amber-200 dark:text-amber-600 mb-4">لا</div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Product Not Found</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">The product you're looking for doesn't exist.</p>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            {error || "The product you're looking for doesn't exist."}
+          </p>
           <Link href="/gallery" className="btn-primary">
             Back to Gallery
           </Link>
@@ -265,31 +317,10 @@ export default function ProductDetailPage() {
         <div className="mt-16">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Related Artworks</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {productData.products
-              .filter(p => p.id !== product.id && p.category === product.category)
-              .slice(0, 3)
-              .map((relatedProduct) => (
-                <Link
-                  key={relatedProduct.id}
-                  href={`/shop/${relatedProduct.id}`}
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/50 border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg dark:hover:shadow-gray-900/50 transition-shadow duration-300"
-                >
-                  <div className="h-48 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-4xl font-arabic text-amber-600 dark:text-amber-400 mb-2 opacity-80">الله</div>
-                      <p className="text-sm text-amber-700 dark:text-amber-300">Preview</p>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                      {relatedProduct.title}
-                    </h3>
-                    <p className="text-amber-600 dark:text-amber-400 font-bold">
-                      RM {relatedProduct.price}
-                    </p>
-                  </div>
-                </Link>
-              ))}
+            {/* Related products will be loaded separately */}
+            <div className="text-center text-gray-500 dark:text-gray-400">
+              <p>Loading related products...</p>
+            </div>
           </div>
         </div>
       </div>

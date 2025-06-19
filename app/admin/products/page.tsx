@@ -2,122 +2,72 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
-interface Product {
-  id: string
-  name: string
-  price: number
-  description: string
-  category: string
-  image: string
-  inStock: boolean
-  featured: boolean
-}
+import { useAdminAuth } from '@/lib/AdminAuthContext'
 
 export default function AdminProducts() {
   const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [products, setProducts] = useState<Product[]>([])
+  const { isAuthenticated, products, deleteProduct, updateProduct } = useAdminAuth()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null)
+  const [productToDelete, setProductToDelete] = useState<any>(null)
 
   useEffect(() => {
     // Check authentication
-    const checkAuth = () => {
-      const authenticated = localStorage.getItem('adminAuthenticated') === 'true'
-      if (!authenticated) {
-        router.push('/admin/login')
-        return
-      }
-      setIsAuthenticated(true)
-      setIsLoading(false)
-      loadProducts()
+    if (!isAuthenticated) {
+      router.push('/admin/login')
     }
+  }, [isAuthenticated, router])
 
-    checkAuth()
-  }, [router])
-
-  const loadProducts = async () => {
-    try {
-      // In a real app, this would be an API call
-      // For now, we'll use sample data
-      const sampleProducts: Product[] = [
-        {
-          id: '1',
-          name: 'Bismillah Calligraphy',
-          price: 250,
-          description: 'Beautiful Arabic calligraphy of Bismillah',
-          category: 'Religious',
-          image: '/images/gallery/khat1.jpg',
-          inStock: true,
-          featured: true
-        },
-        {
-          id: '2',
-          name: 'Alhamdulillah Art',
-          price: 180,
-          description: 'Elegant Alhamdulillah calligraphy piece',
-          category: 'Religious',
-          image: '/images/gallery/khat2.jpg',
-          inStock: true,
-          featured: false
-        },
-        {
-          id: '3',
-          name: 'Allahu Akbar Design',
-          price: 300,
-          description: 'Stunning Allahu Akbar calligraphy artwork',
-          category: 'Religious',
-          image: '/images/gallery/khat3.jpg',
-          inStock: false,
-          featured: true
-        }
-      ]
-      setProducts(sampleProducts)
-    } catch (error) {
-      console.error('Error loading products:', error)
-    }
-  }
-
-  const handleDelete = (product: Product) => {
+  const handleDelete = (product: any) => {
     setProductToDelete(product)
     setShowDeleteModal(true)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (productToDelete) {
-      setProducts(products.filter(p => p.id !== productToDelete.id))
-      setShowDeleteModal(false)
-      setProductToDelete(null)
+      try {
+        await deleteProduct(productToDelete.id)
+        setShowDeleteModal(false)
+        setProductToDelete(null)
+      } catch (error) {
+        console.error('Error deleting product:', error)
+        alert('Failed to delete product. Please try again.')
+      }
     }
   }
 
-  const toggleStock = (productId: string) => {
-    setProducts(products.map(p => 
-      p.id === productId ? { ...p, inStock: !p.inStock } : p
-    ))
+  const toggleStock = async (productId: number) => {
+    try {
+      const product = products.find(p => p.id === productId)
+      if (product) {
+        await updateProduct(productId, { inStock: !product.inStock })
+      }
+    } catch (error) {
+      console.error('Error updating product:', error)
+      alert('Failed to update product. Please try again.')
+    }
   }
 
-  const toggleFeatured = (productId: string) => {
-    setProducts(products.map(p => 
-      p.id === productId ? { ...p, featured: !p.featured } : p
-    ))
+  const toggleFeatured = async (productId: number) => {
+    try {
+      const product = products.find(p => p.id === productId)
+      if (product) {
+        await updateProduct(productId, { featured: !product.featured })
+      }
+    } catch (error) {
+      console.error('Error updating product:', error)
+      alert('Failed to update product. Please try again.')
+    }
   }
 
-  if (isLoading) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading products...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     )
-  }
-
-  if (!isAuthenticated) {
-    return null
   }
 
   return (
@@ -203,16 +153,16 @@ export default function AdminProducts() {
                   <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-12 w-12 flex-shrink-0">
+                        <div className="h-10 w-10 flex-shrink-0">
                           <img
-                            className="h-12 w-12 rounded-lg object-cover"
+                            className="h-10 w-10 rounded-lg object-cover"
                             src={product.image}
-                            alt={product.name}
+                            alt={product.title}
                           />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {product.name}
+                            {product.title}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             {product.description.substring(0, 50)}...
@@ -221,7 +171,7 @@ export default function AdminProducts() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                         {product.category}
                       </span>
                     </td>
@@ -230,18 +180,15 @@ export default function AdminProducts() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex space-x-2">
-                        <button
-                          onClick={() => toggleStock(product.id)}
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            product.inStock
-                              ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200'
-                              : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
-                          }`}
-                        >
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          product.inStock 
+                            ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                            : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                        }`}>
                           {product.inStock ? 'In Stock' : 'Out of Stock'}
-                        </button>
+                        </span>
                         {product.featured && (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200">
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200">
                             Featured
                           </span>
                         )}
@@ -249,27 +196,37 @@ export default function AdminProducts() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
+                        <button
+                          onClick={() => toggleStock(product.id)}
+                          className={`px-2 py-1 text-xs rounded ${
+                            product.inStock
+                              ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800'
+                              : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800'
+                          }`}
+                        >
+                          {product.inStock ? 'Mark Out of Stock' : 'Mark In Stock'}
+                        </button>
+                        <button
+                          onClick={() => toggleFeatured(product.id)}
+                          className={`px-2 py-1 text-xs rounded ${
+                            product.featured
+                              ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+                              : 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-800'
+                          }`}
+                        >
+                          {product.featured ? 'Unfeature' : 'Feature'}
+                        </button>
                         <Link
                           href={`/admin/products/edit/${product.id}`}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                          className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
                         >
                           Edit
                         </Link>
                         <button
                           onClick={() => handleDelete(product)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
+                          className="px-2 py-1 text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded hover:bg-red-200 dark:hover:bg-red-800"
                         >
                           Delete
-                        </button>
-                        <button
-                          onClick={() => toggleFeatured(product.id)}
-                          className={`${
-                            product.featured
-                              ? 'text-gray-600 dark:text-gray-400'
-                              : 'text-amber-600 dark:text-amber-400'
-                          } hover:text-amber-500 dark:hover:text-amber-300`}
-                        >
-                          {product.featured ? 'Unfeature' : 'Feature'}
                         </button>
                       </div>
                     </td>
@@ -283,27 +240,29 @@ export default function AdminProducts() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Confirm Delete
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete "{productToDelete?.name}"? This action cannot be undone.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
-              >
-                Delete
-              </button>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                Confirm Delete
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                Are you sure you want to delete "{productToDelete?.title}"? This action cannot be undone.
+              </p>
+              <div className="flex justify-center space-x-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>
