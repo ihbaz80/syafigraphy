@@ -23,10 +23,11 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: idParam } = await params
   try {
-    const id = parseInt(params.id)
+    const id = parseInt(idParam)
     const product = await request.json()
     await productDB.update(id, product)
 
@@ -39,10 +40,11 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id)
+    const { id: idParam } = await params
+    const id = parseInt(idParam)
     await productDB.delete(id)
 
     return NextResponse.json({ message: 'Product deleted successfully' })

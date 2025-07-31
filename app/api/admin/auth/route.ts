@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDB } from '@/lib/database'
 
+  type AdminUser = {
+  id: string
+  username: string
+  email: string
+}
+
 export async function POST(request: NextRequest) {
+
   try {
-    const { username, password } = await request.json()
-    
-    const user = adminDB.authenticate(username, password)
-    
+    const { username, password } = await request.json();
+
+    const user = await adminDB.authenticate(username, password) as AdminUser | null;
+
     if (user) {
       return NextResponse.json({ 
         success: true, 

@@ -8,17 +8,17 @@ interface ProtectedAdminRouteProps {
 }
 
 export default function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
-  const { isLoggedIn, loading } = useAdminAuth()
+  const { isAuthenticated, orders, products } = useAdminAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !isLoggedIn) {
+    if (!isAuthenticated) {
       router.push('/admin/login')
     }
-  }, [isLoggedIn, loading, router])
+  }, [isAuthenticated, orders, router])
 
   // Show loading spinner while checking authentication
-  if (loading) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -30,7 +30,7 @@ export default function ProtectedAdminRoute({ children }: ProtectedAdminRoutePro
   }
 
   // Don't render anything if not logged in (will redirect)
-  if (!isLoggedIn) {
+  if (!isAuthenticated) {
     return null
   }
 
