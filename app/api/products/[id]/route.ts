@@ -3,10 +3,11 @@ import { productDB } from '@/lib/database'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: idParam } = await params
   try {
-    const id = parseInt(params.id)
+    const id = parseInt(idParam)
     const product = await productDB.getById(id)
 
     if (!product) {
