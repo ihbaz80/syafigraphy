@@ -72,7 +72,7 @@ export default function HeroSection() {
           <div className="relative">
             <div className="relative w-full h-[600px] rounded-2xl overflow-hidden shadow-2xl dark:shadow-gray-900/50">
               <Image
-                src="/images/profile1.jpg"
+                src="/images/profile/profile1.jpg"
                 alt="Arabic Calligraphy Artwork"
                 fill
                 className="object-cover"
