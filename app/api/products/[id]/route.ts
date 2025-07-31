@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { productDB } from '@/lib/database'
 
 export async function GET(
-  request: NextRequest,
-  context: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(context.params.id)
+    const id = parseInt(params.id)
     const product = await productDB.getById(id)
 
     if (!product) {
@@ -21,14 +21,13 @@ export async function GET(
 }
 
 export async function PUT(
-  request: NextRequest,
-  context: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(context.params.id)
+    const id = parseInt(params.id)
     const product = await request.json()
-
-    const result = await productDB.update(id, product)
+    await productDB.update(id, product)
 
     return NextResponse.json({ message: 'Product updated successfully' })
   } catch (error) {
@@ -38,12 +37,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest,
-  context: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(context.params.id)
-
+    const id = parseInt(params.id)
     await productDB.delete(id)
 
     return NextResponse.json({ message: 'Product deleted successfully' })
