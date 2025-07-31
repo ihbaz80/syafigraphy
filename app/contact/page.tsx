@@ -47,25 +47,25 @@ export default function ContactPage() {
     {
       icon: '📍',
       title: 'Studio Location',
-      details: 'Kuala Lumpur, Malaysia',
+      details: 'Alor Setar, Kedah, Malaysia',
       description: 'Visit our studio by appointment'
     },
     {
       icon: '📧',
       title: 'Email',
-      details: 'info@syafigraphy.com',
+      details: 'sales@syafigraphy.com',
       description: 'We respond within 24 hours'
     },
     {
       icon: '📱',
       title: 'Phone',
-      details: '+60 12-345 6789',
+      details: '+60 12-407 8251',
       description: 'Available Mon-Fri, 9AM-6PM'
     },
     {
       icon: '💬',
       title: 'WhatsApp',
-      details: '+60 12-345 6789',
+      details: '+60 12-407 8251',
       description: 'Quick responses for urgent inquiries'
     }
   ]
