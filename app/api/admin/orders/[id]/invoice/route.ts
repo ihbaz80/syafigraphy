@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
-    const orderId = params.id
+    const orderId = id
 
     // In a real application, you would:
     // 1. Fetch order data from your database
@@ -36,10 +37,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
-    const orderId = params.id
+    const orderId = id
     const body = await request.json()
 
     // In a real application, you would:
