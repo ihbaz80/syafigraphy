@@ -7,10 +7,12 @@ import TestimonialsSection from '../components/TestimonialsSection'
 import CTASection from '../components/CTASection'
 import SlidingGallery from '../components/SlidingGallery'
 import VideoSection from '../components/VideoSection'
+import { Analytics } from "@vercel/analytics/next"
 
 export default function Home() {
   return (
     <div className="min-h-screen">
+      <Analytics/>
       {/* Hero Section */}
       <HeroSection />
       <SlidingGallery />
