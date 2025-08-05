@@ -21,7 +21,7 @@ export default function AdminLogin() {
     await new Promise(resolve => setTimeout(resolve, 1000))
 
     // Simple authentication logic
-    if (credentials.username === 'admin' && credentials.password === 'admin123') {
+    if (credentials.username === 'admin' && credentials.password === 'syafiq123') {
       // Store authentication state (in a real app, you'd use secure tokens)
       localStorage.setItem('adminAuthenticated', 'true')
       localStorage.setItem('adminUser', credentials.username)
