@@ -83,19 +83,43 @@ export class SupabaseDatabaseService {
     try {
       this.checkSupabase()
       
+      console.log('Supabase updateProduct called with:', { id, productData })
+      
+      // Map the incoming data to match Supabase column names
+      const mappedData = {
+        title: productData.title,
+        description: productData.description,
+        price: productData.price,
+        original_price: productData.original_price,
+        image_url: productData.image_url,
+        category: productData.category,
+        dimensions: productData.dimensions,
+        medium: productData.medium,
+        style: productData.style,
+        in_stock: productData.in_stock,
+        featured: productData.featured,
+        tags: productData.tags,
+        rating: productData.rating,
+        reviews_count: productData.reviews_count,
+        shipping_weight: productData.shipping_weight,
+        framed: productData.framed,
+        customizable: productData.customizable,
+        updated_at: new Date().toISOString()
+      }
+      
+      console.log('Mapped data for Supabase:', mappedData)
+      
       const { error } = await supabase!
         .from(TABLES.PRODUCTS)
-        .update({
-          ...productData,
-          updated_at: new Date().toISOString()
-        })
+        .update(mappedData)
         .eq('id', id)
 
       if (error) {
-        console.error('Error updating product:', error)
+        console.error('Supabase update error:', error)
         return false
       }
 
+      console.log('Supabase update successful')
       return true
     } catch (error) {
       console.error('Error in updateProduct:', error)
