@@ -85,8 +85,8 @@ export default function HeroSection() {
               {/* Floating Calligraphy Text */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="text-center text-white">
-                  <div className="text-6xl lg:text-8xl font-arabic mb-4 opacity-90 drop-shadow-lg">الله</div>
-                  <p className="text-lg opacity-90 drop-shadow-md">Beautiful Arabic Calligraphy</p>
+                  <div className="text-6xl lg:text-8xl font-arabic mb-4 opacity-90 drop-shadow-lg"></div>
+                  <p className="text-lg opacity-90 drop-shadow-md"></p>
                 </div>
               </div>
             </div>
