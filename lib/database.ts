@@ -2,25 +2,51 @@ import Database from 'better-sqlite3'
 import path from 'path'
 import fs from 'fs'
 
-// Database file path
+// Database configuration
+const isProduction = process.env.NODE_ENV === 'production'
+const useExternalDB = process.env.DATABASE_URL || process.env.POSTGRES_URL
+
+// Database file path (local only)
 const DB_PATH = path.join(process.cwd(), 'data', 'syafigraphy.db')
 
-// Ensure data directory exists
-const dataDir = path.dirname(DB_PATH)
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true })
+// Ensure data directory exists (local only)
+if (!isProduction && !useExternalDB) {
+  const dataDir = path.dirname(DB_PATH)
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true })
+  }
 }
 
 // Initialize database
-let db: Database.Database
+let db: Database.Database | null = null
 
-export function getDatabase(): Database.Database {
-  if (!db) {
-    db = new Database(DB_PATH)
-    db.pragma('journal_mode = WAL')
-    initializeTables()
+export function getDatabase(): Database.Database | null {
+  // In production with external DB, return null
+  if (isProduction && useExternalDB) {
+    return null
   }
+  
+  // Local development with SQLite
+  if (!db && !useExternalDB) {
+    try {
+      db = new Database(DB_PATH)
+      db.pragma('journal_mode = WAL')
+      initializeTables()
+    } catch (error) {
+      console.error('Failed to initialize SQLite database:', error)
+      return null
+    }
+  }
+  
   return db
+}
+
+// Check if database is available
+export function isDatabaseAvailable(): boolean {
+  if (isProduction && useExternalDB) {
+    return true // External DB configured
+  }
+  return getDatabase() !== null
 }
 
 // Type definitions
@@ -49,6 +75,7 @@ interface OrderWithItems {
 // Database schema
 function initializeTables() {
   const db = getDatabase()
+  if (!db) return
   
   // Products table
   db.exec(`
@@ -113,23 +140,25 @@ function initializeTables() {
   `)
 
   // Admin users table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS admin_users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `)
+  if (db) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
 
-  // Insert default admin user if not exists
-  const adminExists = db.prepare('SELECT COUNT(*) as count FROM admin_users WHERE username = ?').get('admin') as CountResult
-  if (adminExists.count === 0) {
-    db.prepare(`
-      INSERT INTO admin_users (username, email, password_hash) 
-      VALUES (?, ?, ?)
-    `).run('admin', 'admin@syafigraphy.com', 'admin123') // In production, use proper password hashing
+    // Insert default admin user if not exists
+    const adminExists = db.prepare('SELECT COUNT(*) as count FROM admin_users WHERE username = ?').get('admin') as CountResult
+    if (adminExists.count === 0) {
+      db.prepare(`
+        INSERT INTO admin_users (username, email, password_hash) 
+        VALUES (?, ?, ?)
+      `).run('admin', 'admin@syafigraphy.com', 'admin123') // In production, use proper password hashing
+    }
   }
 
   // Insert sample products if table is empty
@@ -142,6 +171,7 @@ function initializeTables() {
 // Insert sample products
 function insertSampleProducts() {
   const db = getDatabase()
+  if (!db) return
   
   const sampleProducts = [
     {
@@ -409,16 +439,19 @@ function insertSampleProducts() {
 export const productDB = {
   getAll: () => {
     const db = getDatabase()
+    if (!db) return []
     return db.prepare('SELECT * FROM products ORDER BY created_at DESC').all()
   },
 
   getById: (id: number) => {
     const db = getDatabase()
+    if (!db) return null
     return db.prepare('SELECT * FROM products WHERE id = ?').get(id)
   },
 
   create: (product: any) => {
     const db = getDatabase()
+    if (!db) return null
     const stmt = db.prepare(`
       INSERT INTO products (
         title, description, price, original_price, image_url, category,
@@ -452,6 +485,7 @@ export const productDB = {
 
   update: (id: number, product: any) => {
     const db = getDatabase()
+    if (!db) return null
     const stmt = db.prepare(`
       UPDATE products SET
         title = ?, description = ?, price = ?, original_price = ?, 
@@ -486,11 +520,13 @@ export const productDB = {
 
   delete: (id: number) => {
     const db = getDatabase()
+    if (!db) return null
     return db.prepare('DELETE FROM products WHERE id = ?').run(id)
   },
 
   getCount: () => {
     const db = getDatabase()
+    if (!db) return 0
     const result = db.prepare('SELECT COUNT(*) as count FROM products').get() as CountResult
     return result.count
   }
@@ -500,6 +536,7 @@ export const productDB = {
 export const orderDB = {
   getAll: () => {
     const db = getDatabase()
+    if (!db) return []
     return db.prepare(`
       SELECT o.*, 
              GROUP_CONCAT(oi.product_name || ' (x' || oi.quantity || ')') as items_summary
@@ -512,6 +549,7 @@ export const orderDB = {
 
   getById: (id: number): OrderWithItems | undefined => {
     const db = getDatabase()
+    if (!db) return undefined
     const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id) as OrderWithItems | undefined
     if (order) {
       order.items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(id)
@@ -521,6 +559,7 @@ export const orderDB = {
 
   create: (order: any) => {
     const db = getDatabase()
+    if (!db) return null
     const stmt = db.prepare(`
       INSERT INTO orders (
         order_number, customer_name, customer_email, customer_phone,
@@ -547,6 +586,7 @@ export const orderDB = {
 
   updateStatus: (id: number, status: string) => {
     const db = getDatabase()
+    if (!db) return null
     return db.prepare(`
       UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
     `).run(status, id)
@@ -554,6 +594,7 @@ export const orderDB = {
 
   updateTracking: (id: number, trackingNumber: string) => {
     const db = getDatabase()
+    if (!db) return null
     return db.prepare(`
       UPDATE orders SET tracking_number = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
     `).run(trackingNumber, id)
@@ -561,6 +602,7 @@ export const orderDB = {
 
   addItems: (orderId: number, items: any[]) => {
     const db = getDatabase()
+    if (!db) return
     const stmt = db.prepare(`
       INSERT INTO order_items (order_id, product_id, product_name, product_image, quantity, price)
       VALUES (?, ?, ?, ?, ?, ?)
@@ -573,6 +615,7 @@ export const orderDB = {
 
   getCount: () => {
     const db = getDatabase()
+    if (!db) return 0
     const result = db.prepare('SELECT COUNT(*) as count FROM orders').get() as CountResult
     return result.count
   }
@@ -582,6 +625,7 @@ export const orderDB = {
 export const adminDB = {
   authenticate: (username: string, password: string) => {
     const db = getDatabase()
+    if (!db) return null
     const user = db.prepare('SELECT * FROM admin_users WHERE username = ? AND password_hash = ?').get(username, password)
     return user
   }
