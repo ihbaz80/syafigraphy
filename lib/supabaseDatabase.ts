@@ -86,26 +86,29 @@ export class SupabaseDatabaseService {
       console.log('Supabase updateProduct called with:', { id, productData })
       
       // Map the incoming data to match Supabase column names
-      const mappedData = {
-        title: productData.title,
-        description: productData.description,
-        price: productData.price,
-        original_price: productData.original_price,
-        image_url: productData.image_url,
-        category: productData.category,
-        dimensions: productData.dimensions,
-        medium: productData.medium,
-        style: productData.style,
-        in_stock: productData.in_stock,
-        featured: productData.featured,
-        tags: productData.tags,
-        rating: productData.rating,
-        reviews_count: productData.reviews_count,
-        shipping_weight: productData.shipping_weight,
-        framed: productData.framed,
-        customizable: productData.customizable,
-        updated_at: new Date().toISOString()
-      }
+      // The data comes from AdminAuthContext with snake_case field names
+      const mappedData: any = {}
+      
+      if (productData.title !== undefined) mappedData.title = productData.title
+      if (productData.description !== undefined) mappedData.description = productData.description
+      if (productData.price !== undefined) mappedData.price = productData.price
+      if (productData.original_price !== undefined) mappedData.original_price = productData.original_price
+      if (productData.image_url !== undefined) mappedData.image_url = productData.image_url
+      if (productData.category !== undefined) mappedData.category = productData.category
+      if (productData.dimensions !== undefined) mappedData.dimensions = productData.dimensions
+      if (productData.medium !== undefined) mappedData.medium = productData.medium
+      if (productData.style !== undefined) mappedData.style = productData.style
+      if (productData.in_stock !== undefined) mappedData.in_stock = productData.in_stock
+      if (productData.featured !== undefined) mappedData.featured = productData.featured
+      if (productData.tags !== undefined) mappedData.tags = productData.tags
+      if (productData.rating !== undefined) mappedData.rating = productData.rating
+      if (productData.reviews_count !== undefined) mappedData.reviews_count = productData.reviews_count
+      if (productData.shipping_weight !== undefined) mappedData.shipping_weight = productData.shipping_weight
+      if (productData.framed !== undefined) mappedData.framed = productData.framed
+      if (productData.customizable !== undefined) mappedData.customizable = productData.customizable
+      
+      // Always update the timestamp
+      mappedData.updated_at = new Date().toISOString()
       
       console.log('Mapped data for Supabase:', mappedData)
       

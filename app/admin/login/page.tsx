@@ -17,19 +17,32 @@ export default function AdminLogin() {
     setIsLoading(true)
     setError('')
 
-    // Simulate authentication delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      // Call the Supabase authentication API
+      const response = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      })
 
-    // Simple authentication logic
-    if (credentials.username === 'admin' && credentials.password === 'syafiq123') {
-      // Store authentication state (in a real app, you'd use secure tokens)
-      localStorage.setItem('adminAuthenticated', 'true')
-      localStorage.setItem('adminUser', credentials.username)
-      
-      // Redirect to admin dashboard
-      router.push('/admin/dashboard')
-    } else {
-      setError('Invalid username or password. Please try again.')
+      const data = await response.json()
+
+      if (data.success) {
+        // Store authentication state
+        localStorage.setItem('adminAuthenticated', 'true')
+        localStorage.setItem('adminUser', credentials.username)
+        
+        // Redirect to admin dashboard
+        router.push('/admin/dashboard')
+      } else {
+        setError(data.message || 'Invalid username or password. Please try again.')
+        setIsLoading(false)
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('Login failed. Please try again.')
       setIsLoading(false)
     }
   }
@@ -115,7 +128,7 @@ export default function AdminLogin() {
 
           {/* Demo Credentials */}
           <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+            <h3 className="text-sm font-medium text-blue-800 dark:blue-200 mb-2">
               Demo Credentials
             </h3>
             <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
@@ -123,7 +136,7 @@ export default function AdminLogin() {
               <p><strong>Password:</strong> admin123</p>
             </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-              Note: In production, use secure authentication with proper user management.
+              Note: These credentials are stored in your Supabase database.
             </p>
           </div>
         </div>

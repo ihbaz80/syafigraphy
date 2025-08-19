@@ -30,6 +30,7 @@ interface Order {
 
 interface Product {
   id: number
+  productCode: string
   title: string
   description: string
   price: number
@@ -204,6 +205,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          product_code: product.productCode,
           title: product.title,
           description: product.description,
           price: product.price,
@@ -243,6 +245,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          product_code: product.productCode,
           title: product.title,
           description: product.description,
           price: product.price,

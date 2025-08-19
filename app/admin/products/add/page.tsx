@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAdminAuth } from '@/lib/AdminAuthContext'
 
 interface ProductForm {
+  productCode: string
   title: string
   price: string
   description: string
@@ -25,11 +26,14 @@ export default function AddProduct() {
   const router = useRouter()
   const { isAuthenticated, addProduct } = useAdminAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [formData, setFormData] = useState<ProductForm>({
+    productCode: '',
     title: '',
     price: '',
     description: '',
-    category: 'Religious',
+    category: 'Khat',
     image: '',
     inStock: true,
     featured: false,
@@ -57,6 +61,38 @@ export default function AddProduct() {
     }))
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    setUploadProgress(0)
+
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setFormData(prev => ({ ...prev, image: data.imageUrl }))
+        setUploadProgress(100)
+      } else {
+        throw new Error('Upload failed')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload image. Please try again.')
+    } finally {
+      setIsUploading(false)
+      setTimeout(() => setUploadProgress(0), 2000)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -64,6 +100,7 @@ export default function AddProduct() {
     try {
       // Convert form data to product format
       const newProduct = {
+        productCode: formData.productCode,
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price),
@@ -132,8 +169,27 @@ export default function AddProduct() {
           </div>
           
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Basic Information */}
+            {/* Product Code and Title */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="productCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Product Code *
+                </label>
+                <input
+                  type="text"
+                  id="productCode"
+                  name="productCode"
+                  required
+                  value={formData.productCode}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="e.g., KHAT001, MURAL001"
+                />
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Unique identifier for the product
+                </p>
+              </div>
+
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Product Title *
@@ -147,24 +203,6 @@ export default function AddProduct() {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="e.g., Bismillah Calligraphy"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Price (RM) *
-                </label>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="250.00"
                 />
               </div>
             </div>
@@ -199,12 +237,11 @@ export default function AddProduct() {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="Religious">Religious</option>
-                  <option value="Contemporary">Contemporary</option>
-                  <option value="Decorative">Decorative</option>
-                  <option value="Wedding">Wedding</option>
-                  <option value="Business">Business</option>
-                  <option value="Personal">Personal</option>
+                  <option value="Khat">Khat</option>
+                  <option value="Papan Tanda">Papan Tanda</option>
+                  <option value="Hiasan Masjid & Surau">Hiasan Masjid & Surau</option>
+                  <option value="Cenderahati">Cenderahati</option>
+                  <option value="Mural Khat">Mural Khat</option>
                 </select>
               </div>
 
@@ -224,24 +261,97 @@ export default function AddProduct() {
               </div>
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div>
               <label htmlFor="image" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Image URL *
+                Product Image *
+              </label>
+              
+              {/* Image Upload Input */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="file"
+                    id="image"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 dark:file:bg-amber-900/30 dark:file:text-amber-300"
+                    disabled={isUploading}
+                  />
+                  {isUploading && (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Uploading...</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Upload Progress Bar */}
+                {uploadProgress > 0 && (
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-amber-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                )}
+
+                {/* Current Image Display */}
+                {formData.image && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Current Image:</p>
+                    <div className="relative inline-block">
+                      <img 
+                        src={formData.image} 
+                        alt="Product preview" 
+                        className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual URL Input as Fallback */}
+                <div className="mt-4">
+                  <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Or enter image URL manually:
+                  </label>
+                  <input
+                    type="url"
+                    id="imageUrl"
+                    name="imageUrl"
+                    value={formData.image}
+                    onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Price */}
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Price (RM) *
               </label>
               <input
-                type="url"
-                id="image"
-                name="image"
+                type="number"
+                id="price"
+                name="price"
                 required
-                value={formData.image}
+                min="0"
+                step="0.01"
+                value={formData.price}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="https://example.com/image.jpg"
+                placeholder="250.00"
               />
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Enter the URL of the product image
-              </p>
             </div>
 
             {/* Dimensions and Medium */}
@@ -382,7 +492,7 @@ export default function AddProduct() {
               </Link>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isUploading}
                 className="px-6 py-2 bg-amber-600 dark:bg-amber-500 text-white rounded-lg hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (

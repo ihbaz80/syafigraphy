@@ -20,6 +20,16 @@ interface Product {
   reviews: number
 }
 
+// Define the specific gallery categories
+const GALLERY_CATEGORIES = [
+  { value: 'all', label: 'All Categories' },
+  { value: 'Khat', label: 'Khat' },
+  { value: 'Papan Tanda', label: 'Papan Tanda' },
+  { value: 'Hiasan Masjid & Surau', label: 'Hiasan Masjid & Surau' },
+  { value: 'Cenderahati', label: 'Cenderahati' },
+  { value: 'Mural Khat', label: 'Mural Khat' }
+]
+
 export default function GalleryPage() {
   const { addItem } = useCart()
   const [products, setProducts] = useState<Product[]>([])
@@ -113,7 +123,6 @@ export default function GalleryPage() {
     }, 1000)
   }
 
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.category)))]
   const styles = ['all', ...Array.from(new Set(products.map(p => p.style)))]
 
   if (loading) {
@@ -199,19 +208,19 @@ export default function GalleryPage() {
               />
             </div>
 
-            {/* Category Filter */}
+            {/* Gallery Category Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Category
+                Gallery Category
               </label>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category === 'all' ? 'All Categories' : category}
+                {GALLERY_CATEGORIES.map(category => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
                   </option>
                 ))}
               </select>
